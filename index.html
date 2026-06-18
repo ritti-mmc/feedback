@@ -239,8 +239,15 @@
   .feedback-title { font-size: 16px; font-weight: 700; margin: 0 0 4px; color: #222; }
   .feedback-sub { font-size: 13px; color: #777; margin: 0 0 16px; }
 
-  .stars { font-size: 34px; letter-spacing: 6px; margin-bottom: 6px; }
-  .stars span { color: #d8d8d8; cursor: pointer; transition: color 0.15s ease, transform 0.15s ease; display: inline-block; }
+  .stars {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2px, 1.5vw, 8px);
+    font-size: clamp(20px, 6vw, 30px);
+    margin-bottom: 6px;
+  }
+  .stars span { color: #d8d8d8; cursor: pointer; transition: color 0.15s ease, transform 0.15s ease; }
   .stars span.active { color: #ffb400; }
   .stars span:active { transform: scale(1.15); }
 
