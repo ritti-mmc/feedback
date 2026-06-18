@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>MaxMe Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pt-red: #ED1C24;
+    --pt-orange: #F7941D;
+    --pt-blue: #0072BC;
+    --pt-green: #39B54A;
+    --green-deep: #1B7A3B;
+    --punthai-brown: #6B3E26;
+    --autobacs-red: #E2231A;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Kanit", -apple-system, BlinkMacSystemFont, "Segoe UI", "Tahoma", sans-serif;
+  }
+
+  body {
+    background: #e9e9e9;
+  }
+
+  .device-frame {
+    width: 100%;
+    max-width: 430px;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 932px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+    background: #f4f6f8;
+    border: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 430px) {
+    .device-frame { border: none; }
+  }
+
+  /* ---------- Welcome swipe-to-dismiss popup ---------- */
+  .welcome-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 30;
+    opacity: 1;
+    transition: opacity 0.25s ease;
+  }
+
+  .welcome-overlay.hide { opacity: 0; pointer-events: none; }
+
+  .welcome-sheet {
+    width: 100%;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 10px 22px 26px;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+    touch-action: none;
+  }
+
+  .welcome-handle {
+    width: 44px;
+    height: 5px;
+    background: #ddd;
+    border-radius: 3px;
+    margin: 0 auto 18px;
+  }
+
+  .welcome-title { font-size: 16px; font-weight: 700; color: var(--green-deep); margin: 0 0 10px; text-align: center; }
+
+  .welcome-text { font-size: 13px; line-height: 1.6; color: #444; margin: 0; }
+  .welcome-text + .welcome-text { margin-top: 10px; }
+
+  .welcome-ok-btn {
+    width: 100%;
+    margin-top: 20px;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--green-deep), var(--pt-green));
+    cursor: pointer;
+  }
+
+  /* ---------- Receipts ---------- */
+  .receipts-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 18px 16px 24px;
+    background: #eef3f0;
+  }
+
+  .receipts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green-deep);
+  }
+
+  .receipts-date { font-size: 12px; font-weight: 400; color: #9ab0a4; }
+
+  .receipt-list { display: flex; flex-direction: column; gap: 18px; }
+
+  .receipt-card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+    border: 1px solid #eef3f0;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  .receipt-card:active { transform: scale(0.98); }
+
+  .receipt-card::before,
+  .receipt-card::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 7px;
+    background-image: radial-gradient(circle, #fff 3.5px, transparent 4px);
+    background-size: 12px 7px;
+    background-position: 0 center;
+    background-repeat: repeat-x;
+  }
+
+  .receipt-card::before { top: -3.5px; }
+  .receipt-card::after { bottom: -3.5px; }
+
+  .receipt-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .receipt-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e35;
+  }
+
+  .receipt-logo {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .receipt-logo img { width: 80%; height: 80%; object-fit: contain; }
+
+  .receipt-time { font-size: 11px; color: #9ab0a4; white-space: nowrap; }
+
+  .receipt-items { list-style: none; padding: 0; margin: 0 0 10px; font-size: 13px; color: #5c6e65; }
+  .receipt-items li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px dashed #eef3f0;
+  }
+
+  .receipt-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 14px;
+    color: #2c3e35;
+    padding-top: 6px;
+  }
+
+  .receipt-amount { color: var(--green-deep); }
+  .amount-punthai { color: var(--punthai-brown); }
+  .amount-autobacs { color: var(--autobacs-red); }
+
+  .receipt-action { text-align: right; margin-top: 10px; font-size: 12px; color: #839e8f; }
+
+  /* ---------- Feedback popup ---------- */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .overlay.show { opacity: 1; visibility: visible; }
+
+  .feedback-card {
+    position: relative;
+    width: 84%;
+    max-height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px 20px 20px;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    transform: translateY(10px);
+    transition: transform 0.2s ease;
+  }
+
+  .overlay.show .feedback-card { transform: translateY(0); }
+
+  .feedback-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+  }
+
+  .feedback-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid #eee;
+  }
+  .feedback-logo img { width: 70%; height: 70%; object-fit: contain; }
+
+  .feedback-title { font-size: 16px; font-weight: 700; margin: 0 0 4px; color: #222; }
+  .feedback-sub { font-size: 13px; color: #777; margin: 0 0 16px; }
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2px, 1.5vw, 8px);
+    font-size: clamp(20px, 6vw, 30px);
+    margin-bottom: 6px;
+  }
+  .stars span { color: #d8d8d8; cursor: pointer; transition: color 0.15s ease, transform 0.15s ease; }
+  .stars span.active { color: #ffb400; }
+  .stars span:active { transform: scale(1.15); }
+
+  .rating-hint { font-size: 12px; color: #999; margin-bottom: 16px; min-height: 16px; }
+
+  .feedback-tags { display: none; flex-wrap: wrap; justify-content: center; gap: 8px; margin: -8px 0 16px; }
+
+  .rating-feedback { display: none; margin-bottom: 16px; }
+  .rating-feedback-title { font-size: 13px; font-weight: 700; color: var(--green-deep); margin: 0 0 8px; }
+  .rating-feedback .feedback-tags { display: flex; margin: 0; }
+
+  .tag-option {
+    border: 1.5px solid #ddd;
+    background: #fff;
+    color: #666;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  .tag-option.active { border-color: var(--pt-green); background: #eafbec; color: var(--green-deep); }
+
+  .feedback-section { margin-bottom: 18px; }
+  .section-label { font-size: 13px; font-weight: 700; color: #333; margin: 0 0 8px; }
+
+  .more-btn {
+    display: block;
+    margin: 6px auto 10px;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+  }
+  .more-btn:hover { color: var(--green-deep); }
+
+  .fb-extra-comment { display: none; margin-top: 4px; }
+
+  .channel-options { display: flex; justify-content: center; gap: 14px; margin-bottom: 4px; }
+
+  .channel-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .channel-option .icon-circle {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #f2f2f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .channel-option .icon-circle svg { width: 22px; height: 22px; color: #888; }
+
+  .channel-option.active .icon-circle { background: #eafbec; border-color: var(--pt-green); }
+  .channel-option.active .icon-circle svg { color: var(--green-deep); }
+  .channel-option.active .channel-option-label { color: var(--green-deep); font-weight: 700; }
+
+  .channel-option-label { font-size: 12px; color: #777; }
+
+  .channel-other-input {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+  }
+  .channel-other-input:focus { outline: none; border-color: var(--pt-green); }
+
+  .feedback-textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 16px;
+    font-family: inherit;
+    color: #333;
+    resize: none;
+    margin-bottom: 16px;
+  }
+  .feedback-textarea:focus { outline: none; border-color: var(--pt-green); }
+
+  .feedback-actions { display: flex; gap: 10px; }
+
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 0;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-cancel { background: #f0f0f0; color: #555; }
+  .btn-submit {
+    background: linear-gradient(135deg, var(--green-deep), var(--pt-green));
+    color: #fff;
+  }
+
+  .thanks-card {
+    width: 84%;
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px 20px 22px;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    transform: translateY(10px);
+    transition: transform 0.2s ease;
+  }
+
+  .overlay.show .thanks-card { transform: translateY(0); }
+
+  .thanks-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-deep), var(--pt-green));
+    color: #fff;
+    font-size: 30px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .thanks-title { font-size: 17px; font-weight: 700; color: #222; margin: 0 0 6px; }
+  .thanks-sub { font-size: 13px; color: #777; line-height: 1.5; margin: 0 0 18px; }
+</style>
+</head>
+<body>
+  <div class="device-frame">
+
+    <div class="receipts-area">
+
+      <div class="receipts-header">
+        <span>🧾 รายการล่าสุด (Recent Receipts)</span>
+        <span class="receipts-date">18 มิ.ย. 2026</span>
+      </div>
+
+      <div class="receipt-list">
+
+        <div class="receipt-card" onclick="openFeedback('PT', 'data:image/png;base64,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', 'pt')">
+          <div class="receipt-top">
+            <div class="receipt-brand">
+              <span class="receipt-logo"><img src="data:image/png;base64,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" alt="PT" onerror="this.style.display='none'"></span>
+              <span>ปั๊มน้ำมัน PT</span>
+            </div>
+            <span class="receipt-time">08:15 น.</span>
+          </div>
+          <ul class="receipt-items">
+            <li><span>แก๊สโซฮอล์ 95 (30 ลิตร)</span><span>1,050.00 บ.</span></li>
+            <li><span>ส่วนลดสมาชิก Max Card</span><span>-30.00 บ.</span></li>
+          </ul>
+          <div class="receipt-total">
+            <span>ยอดรวมสุทธิ</span>
+            <span class="receipt-amount">1,020.00 บ.</span>
+          </div>
+          <div class="receipt-action">แตะเพื่อให้คะแนนความพึงพอใจ →</div>
+        </div>
+
+        <div class="receipt-card" onclick="openFeedback('Punthai', 'data:image/png;base64,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', 'punthai')">
+          <div class="receipt-top">
+            <div class="receipt-brand">
+              <span class="receipt-logo"><img src="data:image/png;base64,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" alt="Punthai" onerror="this.style.display='none'"></span>
+              <span>Punthai Saving Tire</span>
+            </div>
+            <span class="receipt-time">12:40 น.</span>
+          </div>
+          <ul class="receipt-items">
+            <li><span>เปลี่ยนยางรถยนต์ 4 เส้น</span><span>6,400.00 บ.</span></li>
+            <li><span>ตั้งศูนย์ถ่วงล้อ</span><span>400.00 บ.</span></li>
+          </ul>
+          <div class="receipt-total">
+            <span>ยอดรวมสุทธิ</span>
+            <span class="receipt-amount amount-punthai">6,800.00 บ.</span>
+          </div>
+          <div class="receipt-action">แตะเพื่อให้คะแนนความพึงพอใจ →</div>
+        </div>
+
+        <div class="receipt-card" onclick="openFeedback('Autobacs', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAeCAYAAABe3VzdAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAB5lJREFUeAHNV3twVOUV/927d3ezeS6xCYm0QqAUqqKAIBKhWIjYBGEgJYYgFGoroBJMQYFYGFupcaLWtmKlkioGHVFGEQZh7BAhFKuMlmeCtpjJBAiKkWSzu8ndx30cz/12EwlIspH84ZnJbO75vvud3/2d5ycRC77HIqOv5cLv1TXANLvq0Ds++gagaURMh1VoH70J9W93wTsvHcFdT7EFWUAKf/gGgq8uB7V5QNH9sYh0RS62DMk2ULsHgYrfQju4E0hxQ2LWlLHTEb9ok2BPr61Ce9mdkPr1g3negHvrV5H3LdOS1K2J78wgGboAp1YWw7cgDfqp45AHZLE9CbbhEzrBaf/djjYLXGIK5MxrI+BYb5ypjYKjvgZIERfpYfjuyYD+0duQBw6BxK40PU1Qrv05ElZsFztD2x6D+ux8ZprgzF+NxLV7hT6wdQ28vxnB777FT90zqKC38KygVz3wLsiALevHkSSQbDDP1MH5qzLETXtIuL7t0YnQ6z+GFOdG8jMnIKcNZPeegn9tNqj5cyg3Xg95yM2IMNgNSOqNGLr489ylkG/FT8m3/CfkWzaQPIVxpJ+pEVu0E/uodbaTPL9UKPB2mdCZAR+1/7WAWnJAvqVZpH26X+j1uoNkhgPdmowdoGmKH1/JdRFgy4cyEIXUDQsiyy2N5F0xmpon20jdtJRMLURmu4fa199NzbcysNJxpJ86GvmImiryrxxJLbezQ0Jqt2Z75WLt420wm+tBIQ2O7FlIfPwwzNbP4Vs6FGaTH/ErN8Dx9CxoR3bBf38WzHZC/H3l6LeEE6btPILb1iG8/xUOLIUzOh1y/3hIdke3NntVZnyLB8MxuQiOnEUwPjvISbCO43A07Dn3c9KEoO37J4wv66CMzIN9xFSY3nMIs04/HkkOKTWDw1WJFm4JZLMh+alP+gagcfo49KO7YZ84H8GXS0CaCvvIXEjuTBhNdTAbjgF2FxQuMTAM6Cf2MZPVQPA8pLRMBuZEl5IS8MM+sxRxdxSjT5IkuOsZar03lVoLZNKO7Ba69s0l1DwJpFYsEs96Yy35fj+BWvJcFHhjjYgv0/cVBV5bRZ55SdS6JI28y4dx/A4TiXZhbF9OYgaovnQfeYsHcfYOp1Y2plYuE3qj5Sx55iaSZzYouPPpiK71C947nDzTubOV3c5ZERT6UNU/GJhM3oVuClVvYnBGj3ZjLtSSI94KCFHj5PSrEd77MsJ7nofc72q4N7dwvXMhtKMcbY/nQE7JQPKzn3JxfgD6/z5Aa1Ec9Jo9cExZDPeWMJQxd8IxaSF6KtLCrqAxBtEO74T6/ELIyVdFFNw5jIaTSNnczOCSOCGaOImugfyD/pw4Y5Dw8A6xLbS9DKF3/gwzEISroBTOmWsiocVxKnGS9CQxMkicEHnsr3b+pOgr3EHkHw3hIeFePkVhJjMRN3s1wFmq11ZD+/B1wbZz5iOw3cCsOh0I7X/rG2ZiACf2xcqgaPzHdkMtL+Ch4BoB0HKQce40kjf7BaMWIN/8RF4fwllfz+5sg3AjDxWBLavgmvskM6cxODtilV4MCxaL0+AqfhFG/f8FQLJqmd3qwzU8mMiQFAeUcTN4TYeUkoTApgcEo5wNEXDWR9l61/5jB2i5lg05xs9BcmUTbENvgdHSBPiDIgHE6MQsO269G6ZPhXP6Q4grKhc6SbZFj7DM9ZwYXczG7OILxGJEisYicbewmJRT+qPrZELRx94BulguwyAJtixXiSdD70AmfoRJa92SeHcEnHX/6NgXPaJzD7fBLr/RcyikoqO7kLVmaJ3Xhw5RLodPrz8E/4M3Qxl2AxL+uBeeO9KQsvUEfEuyEVd4D4yTB7jGfQLn1HniQ7SafZBT0yBfxf164ly0/WkOt8VfQKt+B+7tQah/KUC46k0kPvkejFNHEax8BPYJs6BcPxmByidgy0iGbcQUPrusMyQEGZe4mL/aaDjKxfUmJK5exzVsAzf/SdDrjiB+8QvwFd+G1CoT/hU38hifwNPzDrTclo7U/3h5ei6Cee4z4XL76GnQD+2BffwMmKoP+ge7eNoeJegPvbsNCaUvwX5LoeUeGF+cRNuan8Exbhbil73aBc4lALktQV1fBCc3cSk+BSHuFs4Zq0SxRTjA2VgO4vgLvFICV+ETPCkPgn7sXQT/tR7K4LGIy18LbouQXHwHSUnnQSELOt9LXL/+O8LVL0JyJvAVYSTCfOOTuOPYR+Uh/N5GSAOug3PSAh7BhnaJ229hsIebVsf2jj1WPxePEjRNg91u70wVXedyw7OfTWwjeL1euN3uzqMCgQCPhgpXLBOhcBh2/t9639JdPgZ7yrqL1g0+PBwMYczYMWhsbERJye+QnT1exPGcwkL8+8AB5OfnIzc3l3NAQ8Pp0/jhgAFISEjA+wfeR31DA7a8/hoee/QPUINBHDpyGBcRcuVy06hRVLGxgqbl5tHZxrNUW1NDyUlJxIzRc+ufo40vbKTBg7LI7/MTs0qZ6RnivdKVq6mC10qWPUhTp+TQqodXXnL2lV3cEXHjhS6xni2xdGF2m8PxzUhv8IBgmbPWLPe6XC50mJeinjF5j2zrLou/Z/I1rZVwhr2VYRUAAAAASUVORK5CYII=', 'autobacs')">
+          <div class="receipt-top">
+            <div class="receipt-brand">
+              <span class="receipt-logo"><img src="data:image/png;base64,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" alt="Autobacs" onerror="this.style.display='none'"></span>
+              <span>Autobacs</span>
+            </div>
+            <span class="receipt-time">17:00 น.</span>
+          </div>
+          <ul class="receipt-items">
+            <li><span>เปลี่ยนน้ำมันเครื่องสังเคราะห์</span><span>1,200.00 บ.</span></li>
+            <li><span>ตรวจเช็กสภาพรถฟรี 25 รายการ</span><span>0.00 บ.</span></li>
+          </ul>
+          <div class="receipt-total">
+            <span>ยอดรวมสุทธิ</span>
+            <span class="receipt-amount amount-autobacs">1,200.00 บ.</span>
+          </div>
+          <div class="receipt-action">แตะเพื่อให้คะแนนความพึงพอใจ →</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Welcome swipe-to-dismiss popup -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-sheet" id="welcomeSheet">
+        <div class="welcome-handle"></div>
+        <p class="welcome-title">ยินดีต้อนรับ</p>
+        <p class="welcome-text">สวัสดีค่ะ เครือบริษัท PTG Group ขอขอบพระคุณที่ไว้วางใจใช้บริการของเรา เพื่อยกระดับและพัฒนาคุณภาพการบริการให้ดียิ่งขึ้น เราขอรบกวนเวลาสั้น ๆ ของท่านในการร่วมแบ่งปันประสบการณ์และให้ข้อเสนอแนะ เกี่ยวกับครั้งล่าสุดที่คุณใช้บริการ</p>
+        <p class="welcome-text">ความคิดเห็นของท่านมีค่าสำหรับเราเสมอค่ะ</p>
+        <button class="welcome-ok-btn" onclick="dismissWelcome()">ดำเนินการต่อ</button>
+      </div>
+    </div>
+
+    <!-- Feedback popup -->
+    <div class="overlay" id="feedbackOverlay">
+      <div class="feedback-card">
+        <button class="feedback-close" onclick="closeFeedback()">&times;</button>
+        <div class="feedback-logo" id="fbLogoWrap">
+          <img id="fbLogo" src="" alt="">
+        </div>
+        <p class="feedback-title" id="fbLocationName">-</p>
+        <p class="feedback-sub">ให้คะแนนความพึงพอใจการบริการ</p>
+
+        <div id="fbForm">
+          <div class="feedback-section">
+            <p class="section-label">1. บริการของสถานี</p>
+            <div class="stars" id="fbStarsStation">
+              <span data-v="1">★</span>
+              <span data-v="2">★</span>
+              <span data-v="3">★</span>
+              <span data-v="4">★</span>
+              <span data-v="5">★</span>
+            </div>
+            <button type="button" class="more-btn" data-target="fbStationComment">ความเห็นเพิ่มเติม</button>
+            <div class="rating-hint" id="fbHintStation">แตะดาวเพื่อให้คะแนน</div>
+            <div class="rating-feedback" id="fbStationFeedback">
+              <p class="rating-feedback-title" id="fbStationFeedbackTitle"></p>
+              <div class="feedback-tags" id="fbStationTags"></div>
+            </div>
+            <textarea class="feedback-textarea fb-extra-comment" id="fbStationComment" rows="2" placeholder="แสดงความคิดเห็นอื่นๆ"></textarea>
+          </div>
+
+          <div class="feedback-section">
+            <p class="section-label">2. บริการของพนักงาน</p>
+            <div class="stars" id="fbStarsStaff">
+              <span data-v="1">★</span>
+              <span data-v="2">★</span>
+              <span data-v="3">★</span>
+              <span data-v="4">★</span>
+              <span data-v="5">★</span>
+            </div>
+            <button type="button" class="more-btn" data-target="fbStaffComment">ความเห็นเพิ่มเติม</button>
+            <div class="rating-hint" id="fbHintStaff">แตะดาวเพื่อให้คะแนน</div>
+            <div class="rating-feedback" id="fbStaffFeedback">
+              <p class="rating-feedback-title" id="fbStaffFeedbackTitle"></p>
+              <div class="feedback-tags" id="fbStaffTags"></div>
+            </div>
+            <textarea class="feedback-textarea fb-extra-comment" id="fbStaffComment" rows="2" placeholder="แสดงความคิดเห็นอื่นๆ"></textarea>
+          </div>
+
+          <div class="feedback-section">
+            <p class="section-label">3. รู้จักสถานที่จากช่องทางใด</p>
+            <div class="channel-options" id="fbChannels">
+              <button type="button" class="channel-option" data-channel="facebook">
+                <span class="icon-circle">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.07C22 6.48 17.52 2 11.93 2S2 6.48 2 12.07c0 5 3.66 9.13 8.44 9.93v-7.03H7.9v-2.9h2.54V9.41c0-2.51 1.49-3.9 3.78-3.9 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.9h-2.34V22c4.78-.8 8.44-4.93 8.44-9.93z"/></svg>
+                </span>
+                <span class="channel-option-label">Facebook</span>
+              </button>
+              <button type="button" class="channel-option" data-channel="instagram">
+                <span class="icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+                </span>
+                <span class="channel-option-label">Instagram</span>
+              </button>
+              <button type="button" class="channel-option" data-channel="twitter">
+                <span class="icon-circle">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 5.92c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05A3.93 3.93 0 0 0 15.5 4c-2.18 0-3.95 1.79-3.95 4 0 .31.03.61.1.9-3.28-.17-6.19-1.75-8.14-4.17-.34.59-.53 1.27-.53 2 0 1.38.7 2.6 1.77 3.31a3.9 3.9 0 0 1-1.79-.5v.05c0 1.93 1.36 3.54 3.17 3.92-.33.09-.68.14-1.04.14-.25 0-.5-.02-.74-.07.5 1.58 1.96 2.73 3.69 2.76A7.86 7.86 0 0 1 2 18.57 11.1 11.1 0 0 0 8.29 20.5c7.55 0 11.68-6.34 11.68-11.85 0-.18 0-.36-.01-.54.8-.59 1.5-1.32 2.04-2.19z"/></svg>
+                </span>
+                <span class="channel-option-label">Twitter</span>
+              </button>
+              <button type="button" class="channel-option" data-channel="other">
+                <span class="icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                </span>
+                <span class="channel-option-label">อื่นๆ</span>
+              </button>
+            </div>
+            <input type="text" id="fbChannelOther" class="channel-other-input" placeholder="ระบุช่องทางอื่น ๆ">
+          </div>
+
+          <div class="feedback-actions" id="fbActions">
+            <button class="btn btn-cancel" onclick="closeFeedback()">ยกเลิก</button>
+            <button class="btn btn-submit" onclick="submitFeedback()">ส่งความคิดเห็น</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thank-you popup -->
+    <div class="overlay" id="thanksOverlay">
+      <div class="thanks-card">
+        <div class="thanks-icon">✓</div>
+        <p class="thanks-title">ขอบคุณสำหรับคำแนะนำ</p>
+        <p class="thanks-sub">เราจะนำความคิดเห็นของคุณไปพัฒนาปรับปรุงบริการให้ดียิ่งขึ้น</p>
+        <button class="btn btn-submit" style="width: 100%;" onclick="closeThanks()">ปิด</button>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  (function () {
+    var overlay = document.getElementById('welcomeOverlay');
+    var sheet = document.getElementById('welcomeSheet');
+    var dragging = false;
+    var startY = 0;
+    var dragY = 0;
+
+    function pointerDown(y) {
+      dragging = true;
+      startY = y;
+      dragY = 0;
+      sheet.style.transition = 'none';
+    }
+
+    function pointerMove(y) {
+      if (!dragging) return;
+      dragY = Math.max(0, y - startY);
+      sheet.style.transform = 'translateY(' + dragY + 'px)';
+    }
+
+    function pointerUp() {
+      if (!dragging) return;
+      dragging = false;
+      sheet.style.transition = 'transform 0.25s ease';
+      if (dragY > 120) {
+        dismissWelcome();
+      } else {
+        sheet.style.transform = 'translateY(0)';
+      }
+    }
+
+    sheet.addEventListener('touchstart', function (e) { pointerDown(e.touches[0].clientY); });
+    sheet.addEventListener('touchmove', function (e) { pointerMove(e.touches[0].clientY); });
+    sheet.addEventListener('touchend', pointerUp);
+
+    sheet.addEventListener('mousedown', function (e) { pointerDown(e.clientY); });
+    document.addEventListener('mousemove', function (e) { pointerMove(e.clientY); });
+    document.addEventListener('mouseup', pointerUp);
+
+    window.dismissWelcome = function () {
+      sheet.style.transition = 'transform 0.25s ease';
+      sheet.style.transform = 'translateY(100%)';
+      overlay.classList.add('hide');
+    };
+  })();
+
+  var currentRatingStation = 0;
+  var currentRatingStaff = 0;
+  var selectedChannel = '';
+  var ratingLabels = ['', 'แย่มาก', 'แย่', 'พอใช้', 'ดี', 'ดีมาก'];
+
+  function openFeedback(name, logoSrc, key) {
+    document.getElementById('fbLocationName').textContent = name;
+    var img = document.getElementById('fbLogo');
+    img.src = logoSrc;
+    img.alt = name;
+
+    setStars('fbStarsStation', 'fbHintStation', 0);
+    setStars('fbStarsStaff', 'fbHintStaff', 0);
+    document.getElementById('fbHintStation').style.color = '#999';
+    document.getElementById('fbHintStaff').style.color = '#999';
+
+    document.getElementById('fbStationFeedback').style.display = 'none';
+    document.getElementById('fbStaffFeedback').style.display = 'none';
+
+    selectedChannel = '';
+    document.querySelectorAll('#fbChannels .channel-option').forEach(function (b) {
+      b.classList.remove('active');
+    });
+    document.getElementById('fbChannelOther').style.display = 'none';
+    document.getElementById('fbChannelOther').value = '';
+
+    document.querySelectorAll('.fb-extra-comment').forEach(function (t) {
+      t.value = '';
+      t.style.display = 'none';
+    });
+
+    document.getElementById('feedbackOverlay').classList.add('show');
+  }
+
+  function closeFeedback() {
+    document.getElementById('feedbackOverlay').classList.remove('show');
+  }
+
+  function openThanks() {
+    document.getElementById('thanksOverlay').classList.add('show');
+  }
+
+  function closeThanks() {
+    document.getElementById('thanksOverlay').classList.remove('show');
+  }
+
+  document.getElementById('thanksOverlay').addEventListener('click', function (e) {
+    if (e.target === this) closeThanks();
+  });
+
+  function setStars(starsId, hintId, n) {
+    var stars = document.querySelectorAll('#' + starsId + ' span');
+    stars.forEach(function (s) {
+      s.classList.toggle('active', parseInt(s.dataset.v, 10) <= n);
+    });
+    document.getElementById(hintId).textContent = n > 0 ? ratingLabels[n] : 'แตะดาวเพื่อให้คะแนน';
+    return n;
+  }
+
+  var ratingFeedbackData = {
+    station: {
+      5: {
+        title: 'ประทับใจขั้นสุด (Excellent)',
+        tags: ['ห้องน้ำสะอาดมาก', 'บริการรวดเร็วทันใจ', 'พนักงานสุภาพยิ้มแย้ม', 'ไฟสว่างปลอดภัย', 'สิ่งอำนวยความสะดวกครบ (เช่น มีร้านค้า ตู้เต่าบิน จุดพักผ่อน)', 'ที่จอดรถกว้างขวาง', 'ตู้ชาร์จ/หัวจ่ายใช้งานได้ดี']
+      },
+      4: {
+        title: 'ดีตามมาตรฐาน (Good)',
+        tags: ['บริการตามมาตรฐาน', 'สถานที่สะอาดเรียบร้อย', 'ของกิน/ร้านค้าเยอะ', 'มีป้ายบอกทางชัดเจน', 'พนักงานใส่ใจดี', 'รอคิวไม่นาน']
+      },
+      3: {
+        title: 'ปานกลาง/เฉยๆ (Fair)',
+        tags: ['พอใช้งานได้', 'ห้องน้ำพอใช้', 'คนค่อนข้างหนาแน่น', 'บริการปานกลาง', 'ตู้ชาร์จ/หัวจ่ายเต็มบางจุด', 'ทางเข้าออกค่อนข้างแคบ']
+      },
+      2: {
+        title: 'ต้องปรับปรุง (Poor)',
+        tags: ['ห้องน้ำไม่ค่อยสะอาด', 'บริการล่าช้า', 'พนักงานไม่ค่อยสนใจ', 'ไฟส่องสว่างน้อย/ดูเปลี่ยว', 'ที่จอดรถน้อย/จัดระเบียบไม่ดี', 'ตู้ชาร์จ/หัวจ่ายเสียบางตู้']
+      },
+      1: {
+        title: 'แย่มาก/ไม่แนะนำ (Terrible)',
+        tags: ['ห้องน้ำสกปรกมาก/ไม่มีน้ำ', 'พนักงานบริการแย่/พูดจาไม่ดี', 'ระบบล่ม/ใช้งานไม่ได้เลย', 'สถานที่มืดและอันตราย', 'รอนานเกินไป', 'ไม่มีการจัดการคิว']
+      }
+    },
+    staff: {
+      5: {
+        title: 'บริการยอดเยี่ยม (Excellent)',
+        tags: ['พนักงานยิ้มแย้มแจ่มใส', 'บริการดีใส่ใจมาก', 'สุภาพนอบน้อม', 'ช่วยเหลือกระตือรือร้น', 'ให้ข้อมูลชัดเจนครบถ้วน', 'แก้ไขปัญหาได้รวดเร็ว', 'เป็นมิตรและเป็นกันเอง']
+      },
+      4: {
+        title: 'บริการดีตามมาตรฐาน (Good)',
+        tags: ['บริการรวดเร็วทันใจ', 'พูดจาไพเราะ', 'ทำงานคล่องแคล่ว', 'ดูแลเอาใจใส่ดี', 'พนักงานเพียงพอ']
+      },
+      3: {
+        title: 'ปานกลาง/ทั่วไป (Fair)',
+        tags: ['บริการตามปกติ', 'พนักงานทำตามหน้าที่', 'ตอบคำถามได้ปกติ', 'หน้าตาเฉยเมยไปนิด', 'เรียกหาตัวค่อนข้างยาก']
+      },
+      2: {
+        title: 'ควรปรับปรุง (Poor)',
+        tags: ['พนักงานไม่ค่อยสนใจ', 'พูดจาไม่มีหางเสียง', 'บริการล่าช้า/เฉื่อยชา', 'ไม่เต็มใจบริการ', 'ให้ข้อมูลไม่ชัดเจน']
+      },
+      1: {
+        title: 'ปรับปรุงด่วน/แย่มาก (Terrible)',
+        tags: ['พนักงานพูดจาไม่ดี/ชักสีหน้า', 'บริการแย่มาก', 'ละเลยลูกค้า/เมินเฉย', 'เกี่ยงกันทำงาน', 'ไม่รับฟังปัญหา', 'กิริยาไม่สุภาพ']
+      }
+    }
+  };
+
+  function renderRatingFeedback(group, n) {
+    var box = document.getElementById('fb' + group + 'Feedback');
+    var data = ratingFeedbackData[group.toLowerCase()][n];
+    if (!data) {
+      box.style.display = 'none';
+      return;
+    }
+    document.getElementById('fb' + group + 'FeedbackTitle').textContent = data.title;
+
+    var tagsBox = document.getElementById('fb' + group + 'Tags');
+    tagsBox.innerHTML = '';
+    data.tags.forEach(function (tag) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tag-option';
+      btn.textContent = '#' + tag;
+      btn.addEventListener('click', function () {
+        btn.classList.toggle('active');
+      });
+      tagsBox.appendChild(btn);
+    });
+
+    box.style.display = 'block';
+  }
+
+  document.querySelectorAll('#fbStarsStation span').forEach(function (s) {
+    s.addEventListener('click', function () {
+      currentRatingStation = setStars('fbStarsStation', 'fbHintStation', parseInt(s.dataset.v, 10));
+      renderRatingFeedback('Station', currentRatingStation);
+    });
+  });
+
+  document.querySelectorAll('#fbStarsStaff span').forEach(function (s) {
+    s.addEventListener('click', function () {
+      currentRatingStaff = setStars('fbStarsStaff', 'fbHintStaff', parseInt(s.dataset.v, 10));
+      renderRatingFeedback('Staff', currentRatingStaff);
+    });
+  });
+
+  document.querySelectorAll('.more-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var box = document.getElementById(btn.dataset.target);
+      box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    });
+  });
+
+  document.querySelectorAll('#fbChannels .channel-option').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#fbChannels .channel-option').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      selectedChannel = btn.dataset.channel;
+
+      var otherInput = document.getElementById('fbChannelOther');
+      if (selectedChannel === 'other') {
+        otherInput.style.display = 'block';
+        otherInput.focus();
+      } else {
+        otherInput.style.display = 'none';
+        otherInput.value = '';
+      }
+    });
+  });
+
+  function submitFeedback() {
+    var valid = true;
+    if (currentRatingStation === 0) {
+      document.getElementById('fbHintStation').textContent = 'กรุณาเลือกคะแนนก่อนส่ง';
+      document.getElementById('fbHintStation').style.color = '#E2231A';
+      valid = false;
+    }
+    if (currentRatingStaff === 0) {
+      document.getElementById('fbHintStaff').textContent = 'กรุณาเลือกคะแนนก่อนส่ง';
+      document.getElementById('fbHintStaff').style.color = '#E2231A';
+      valid = false;
+    }
+    if (!valid) return;
+
+    closeFeedback();
+    openThanks();
+  }
+
+  document.getElementById('feedbackOverlay').addEventListener('click', function (e) {
+    if (e.target === this) closeFeedback();
+  });
+</script>
+</body>
+</html>
